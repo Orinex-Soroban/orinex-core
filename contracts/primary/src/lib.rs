@@ -232,6 +232,53 @@ impl PrimaryContract {
         events::deal_disputed(&env, deal_id, &caller);
         Ok(())
     }
+
+    /// Settle a disputed deal. The arbiter must authorize.
+    ///
+    /// With `release_to_payee` the payee receives the amount net of the protocol
+    /// fee and the fee recipient the remainder; otherwise the payer is refunded
+    /// in full with no fee taken.
+    pub fn resolve_dispute(env: Env, deal_id: u64, release_to_payee: bool) -> Result<(), Error> {
+        let config = read_config(&env)?;
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        // The arbiter address lives in the deal record, so the record is read
+        // before the authorization check, which still precedes every transfer
+        // and storage mutation.
+        deal.arbiter.require_auth();
+
+        if deal.status != DealStatus::Disputed {
+            return Err(Error::InvalidStatus);
+        }
+
+        let token = token::Client::new(&env, &config.token);
+        let contract = env.current_contract_address();
+
+        let (net, fee) = if release_to_payee {
+            let fee = fee_amount(deal.amount, config.fee_bps)?;
+            let net = deal
+                .amount
+                .checked_sub(fee)
+                .ok_or(Error::ArithmeticOverflow)?;
+            if fee > 0 {
+                token.transfer(&contract, &config.fee_recipient, &fee);
+            }
+            token.transfer(&contract, &deal.payee, &net);
+            (net, fee)
+        } else {
+            token.transfer(&contract, &deal.payer, &deal.amount);
+            (deal.amount, 0)
+        };
+
+        deal.status = if release_to_payee {
+            DealStatus::Released
+        } else {
+            DealStatus::Refunded
+        };
+        storage::write_deal(&env, &deal);
+        events::dispute_resolved(&env, deal_id, release_to_payee, net, fee);
+        Ok(())
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
