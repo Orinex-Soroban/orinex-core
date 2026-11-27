@@ -52,9 +52,9 @@ create_issue() {
     echo "would create: ${title}  [${labels}]"
     return
   fi
-  local number
-  number="$(gh issue create --repo "$REPO" --title "$title" --body "$body" --label "$labels" \
-    --json number --jq .number)"
+  local url number
+  url="$(gh issue create --repo "$REPO" --title "$title" --body "$body" --label "$labels")"
+  number="${url##*/}"
   echo "create #${number} ${title}"
 }
 
