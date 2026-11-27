@@ -4,6 +4,9 @@ mod errors;
 pub mod events;
 pub mod storage;
 
+#[cfg(test)]
+mod test;
+
 use soroban_sdk::{contract, contractimpl, token, Address, Env};
 
 pub use errors::Error;
