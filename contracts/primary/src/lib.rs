@@ -4,7 +4,7 @@ mod errors;
 pub mod events;
 pub mod storage;
 
-use soroban_sdk::{contract, contractimpl, Address, Env};
+use soroban_sdk::{contract, contractimpl, token, Address, Env};
 
 pub use errors::Error;
 pub use storage::{Config, Deal, DealStatus};
@@ -125,5 +125,32 @@ impl PrimaryContract {
         storage::write_deal(&env, &deal);
         events::deal_created(&env, &deal);
         Ok(deal_id)
+    }
+
+    /// Deposit the deal amount into escrow, moving it from the payer to the
+    /// contract. The payer must authorize.
+    pub fn fund_deal(env: Env, payer: Address, deal_id: u64) -> Result<(), Error> {
+        payer.require_auth();
+
+        let config = read_config(&env)?;
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        if deal.payer != payer {
+            return Err(Error::Unauthorized);
+        }
+        if deal.status != DealStatus::Created {
+            return Err(Error::InvalidStatus);
+        }
+        if env.ledger().timestamp() >= deal.deadline {
+            return Err(Error::DealExpired);
+        }
+
+        let token = token::Client::new(&env, &config.token);
+        token.transfer(&payer, env.current_contract_address(), &deal.amount);
+
+        deal.status = DealStatus::Funded;
+        storage::write_deal(&env, &deal);
+        events::deal_funded(&env, deal_id, &payer, deal.amount);
+        Ok(())
     }
 }
