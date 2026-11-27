@@ -1,0 +1,14 @@
+{
+  "network": "testnet",
+  "network_passphrase": "Test SDF Network ; September 2015",
+  "rpc_url": "https://soroban-testnet.stellar.org",
+  "contract_id": null,
+  "wasm": "artifacts/primary.wasm",
+  "wasm_sha256": null,
+  "admin": null,
+  "token": null,
+  "fee_bps": null,
+  "fee_recipient": null,
+  "deployed_at": null,
+  "deployed_by": null
+}
