@@ -82,4 +82,48 @@ impl PrimaryContract {
     pub fn get_config(env: Env) -> Result<Config, Error> {
         read_config(&env)
     }
+
+    /// Create a deal in the `Created` state; funds move only in [`fund_deal`].
+    ///
+    /// The payer must authorize. Payer, payee and arbiter must be distinct, the
+    /// amount strictly positive, and the deadline in the future.
+    pub fn create_deal(
+        env: Env,
+        payer: Address,
+        payee: Address,
+        arbiter: Address,
+        amount: i128,
+        deadline: u64,
+    ) -> Result<u64, Error> {
+        payer.require_auth();
+        storage::ensure_initialized(&env)?;
+
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+        if payer == payee || arbiter == payer || arbiter == payee {
+            return Err(Error::InvalidParty);
+        }
+
+        let created_at = env.ledger().timestamp();
+        if deadline <= created_at {
+            return Err(Error::InvalidDeadline);
+        }
+
+        let deal_id = storage::next_deal_id(&env)?;
+        let deal = Deal {
+            id: deal_id,
+            payer,
+            payee,
+            arbiter,
+            amount,
+            deadline,
+            status: DealStatus::Created,
+            created_at,
+        };
+
+        storage::write_deal(&env, &deal);
+        events::deal_created(&env, &deal);
+        Ok(deal_id)
+    }
 }
