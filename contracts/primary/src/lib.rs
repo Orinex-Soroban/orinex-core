@@ -211,6 +211,27 @@ impl PrimaryContract {
         events::deal_refunded(&env, deal_id, &deal.payer, deal.amount);
         Ok(())
     }
+
+    /// Escalate a funded deal to the arbiter. Either the payer or the payee may
+    /// call this; settlement is then decided by the arbiter.
+    pub fn raise_dispute(env: Env, caller: Address, deal_id: u64) -> Result<(), Error> {
+        caller.require_auth();
+        storage::ensure_initialized(&env)?;
+
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        if caller != deal.payer && caller != deal.payee {
+            return Err(Error::Unauthorized);
+        }
+        if deal.status != DealStatus::Funded {
+            return Err(Error::InvalidStatus);
+        }
+
+        deal.status = DealStatus::Disputed;
+        storage::write_deal(&env, &deal);
+        events::deal_disputed(&env, deal_id, &caller);
+        Ok(())
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
