@@ -187,6 +187,30 @@ impl PrimaryContract {
         events::deal_released(&env, deal_id, &deal.payee, net, fee);
         Ok(())
     }
+
+    /// Return the escrowed amount to the payer without a fee. The payee must
+    /// authorize, so only the counterparty can cancel a funded deal.
+    pub fn refund(env: Env, payee: Address, deal_id: u64) -> Result<(), Error> {
+        payee.require_auth();
+
+        let config = read_config(&env)?;
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        if deal.payee != payee {
+            return Err(Error::Unauthorized);
+        }
+        if deal.status != DealStatus::Funded {
+            return Err(Error::InvalidStatus);
+        }
+
+        let token = token::Client::new(&env, &config.token);
+        token.transfer(&env.current_contract_address(), &deal.payer, &deal.amount);
+
+        deal.status = DealStatus::Refunded;
+        storage::write_deal(&env, &deal);
+        events::deal_refunded(&env, deal_id, &deal.payer, deal.amount);
+        Ok(())
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
