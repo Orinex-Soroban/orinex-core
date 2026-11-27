@@ -93,3 +93,19 @@ cat > "$DEPLOYMENTS_FILE" <<JSON
 JSON
 
 echo "recorded deployment in ${DEPLOYMENTS_FILE}"
+
+cat <<SUMMARY
+
+Deployment complete. Values for downstream configuration:
+
+  CONTRACT_ID=${CONTRACT_ID}
+  ADMIN=${ADMIN}
+  TOKEN=${TOKEN}
+  FEE_RECIPIENT=${FEE_RECIPIENT}
+  FEE_BPS=${FEE_BPS}
+  WASM_SHA256=${WASM_SHA256}
+
+Repository-level check:
+
+  stellar contract invoke --id ${CONTRACT_ID} --network ${NETWORK} -- get_config
+SUMMARY
