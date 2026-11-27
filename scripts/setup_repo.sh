@@ -15,7 +15,10 @@ set -euo pipefail
 REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
 BRANCH="${BRANCH:-main}"
 
-DESCRIPTION="Single-asset escrow for Soroban on Stellar — arbiter-settled disputes, capped protocol fee, deadline reclaim. Rust contract, 39 tests, deployed on testnet."
+# About box: what a user gets, in one sentence, then the stack and status.
+# 350 char limit. Competitor repos (Trustless Work, SafeTrust, OfferHub) all
+# describe the product, not the feature list — match that before the pitch.
+DESCRIPTION="Escrow smart contract for Stellar: two parties agree terms, a named arbiter settles disputes, the fee is capped at 10%, and the payer can reclaim after the deadline. Rust / Soroban, MIT, deployed on testnet."
 
 # Status check names must match the job names in .github/workflows/ci.yml.
 CHECKS=("rustfmt" "clippy" "cargo test" "wasm build")
@@ -28,6 +31,9 @@ if ! gh api --method PATCH "repos/${REPO}" -f description="$DESCRIPTION" >/dev/n
   exit 1
 fi
 
+# Topics are how people browse, so use the words they actually filter by:
+# the two stack terms, the category, and the asset domain. Lowercase and
+# hyphenated only; 20 is the GitHub cap, 10-12 is the useful range.
 echo "→ topics"
 gh api --method PUT "repos/${REPO}/topics" \
   -f "names[]=stellar" \
@@ -35,8 +41,14 @@ gh api --method PUT "repos/${REPO}/topics" \
   -f "names[]=escrow" \
   -f "names[]=smart-contracts" \
   -f "names[]=rust" \
-  -f "names[]=stellar-wave" \
+  -f "names[]=payments" \
+  -f "names[]=defi" \
   -f "names[]=blockchain" >/dev/null
+
+# Homepage: add once the GitBook is published, e.g.
+#   gh api --method PATCH "repos/${REPO}" -f homepage="https://orinex.gitbook.io/docs"
+# Leave it empty until that URL resolves — a dead link in the About box reads
+# worse than a blank one.
 
 echo "→ branch protection on ${BRANCH}"
 checks_json="$(printf '"%s",' "${CHECKS[@]}")"
