@@ -172,8 +172,9 @@ Issues are scoped and labelled (`good first issue`, `contract`, `tests`,
 [`CONTRIBUTING.md`](CONTRIBUTING.md): conventional commits, one logical unit per
 commit, `make verify` green, no lint suppressions.
 
-`main` is protected: PRs only, one approval, and the four CI checks (`rustfmt`,
-`clippy`, `cargo test`, `wasm build`) must pass.
+`main` takes PRs with one approval and the four CI checks (`rustfmt`, `clippy`,
+`cargo test`, `wasm build`). Branch protection is applied by
+`scripts/setup_repo.sh`, which needs an admin-scoped `gh` session.
 
 ## Security
 

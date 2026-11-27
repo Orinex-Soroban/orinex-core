@@ -30,7 +30,8 @@ starting so two people don't build the same thing.
 
 ## Reviewing
 
-`main` requires a PR, one approval, and green CI. Reviewers look for:
+`main` takes PRs only, with one approval and green CI; the protection rules are
+applied by `scripts/setup_repo.sh`. Reviewers look for:
 does the change match the issue, does the test actually exercise the failure it
 claims to, and does anything new widen what an admin or a party can do.
 

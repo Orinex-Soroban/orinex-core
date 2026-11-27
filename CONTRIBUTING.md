@@ -59,7 +59,8 @@ chore(ci): cache the wasm build target
 
 ## Pull requests
 
-- Branch from `main`; `main` is protected and requires a PR with a passing CI.
+- Branch from `main`; `main` requires a PR with passing CI. Branch protection is
+  applied by `scripts/setup_repo.sh` and needs an admin-scoped `gh` session.
 - PR description: what changed, why, and how you verified it. Paste the failing
   test output if you fixed a bug.
 - Keep PRs small enough to review in one sitting. A 1,000-line PR will sit.
