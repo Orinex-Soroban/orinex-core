@@ -311,6 +311,11 @@ impl PrimaryContract {
     pub fn get_deal(env: Env, deal_id: u64) -> Result<Deal, Error> {
         storage::read_deal(&env, deal_id)
     }
+
+    /// Total number of deals created so far; deal ids run from 1 to this value.
+    pub fn get_deal_count(env: Env) -> u64 {
+        storage::deal_count(&env)
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
