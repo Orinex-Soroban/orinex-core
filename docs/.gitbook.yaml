@@ -1,0 +1,10 @@
+root: ./
+
+structure:
+  readme: introduction.md
+  summary: SUMMARY.md
+
+redirects:
+  setup: developers/setup.md
+  reference: contract-reference.md
+  mechanics: protocol-mechanics.md
