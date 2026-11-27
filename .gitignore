@@ -1,6 +1,6 @@
 /target
 /artifacts
-/test_snapshots
+test_snapshots/
 .env
 .env.*
 !.env.example
