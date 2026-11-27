@@ -279,6 +279,33 @@ impl PrimaryContract {
         events::dispute_resolved(&env, deal_id, release_to_payee, net, fee);
         Ok(())
     }
+
+    /// Reclaim escrow once the deal deadline has passed. The payer must
+    /// authorize; the payee keeps the option to refund at any time.
+    pub fn refund_expired(env: Env, payer: Address, deal_id: u64) -> Result<(), Error> {
+        payer.require_auth();
+
+        let config = read_config(&env)?;
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        if deal.payer != payer {
+            return Err(Error::Unauthorized);
+        }
+        if deal.status != DealStatus::Funded {
+            return Err(Error::InvalidStatus);
+        }
+        if env.ledger().timestamp() < deal.deadline {
+            return Err(Error::DealNotExpired);
+        }
+
+        let token = token::Client::new(&env, &config.token);
+        token.transfer(&env.current_contract_address(), &deal.payer, &deal.amount);
+
+        deal.status = DealStatus::Refunded;
+        storage::write_deal(&env, &deal);
+        events::deal_refunded(&env, deal_id, &deal.payer, deal.amount);
+        Ok(())
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
