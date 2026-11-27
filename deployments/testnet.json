@@ -2,13 +2,13 @@
   "network": "testnet",
   "network_passphrase": "Test SDF Network ; September 2015",
   "rpc_url": "https://soroban-testnet.stellar.org",
-  "contract_id": null,
+  "contract_id": "CA43UELWFPN2YF2H77XIVCWR7KMBG66VHMKOOHO2YMD4Q5ODDGDRABZV",
   "wasm": "artifacts/primary.wasm",
-  "wasm_sha256": null,
-  "admin": null,
-  "token": null,
-  "fee_bps": null,
-  "fee_recipient": null,
-  "deployed_at": null,
-  "deployed_by": null
+  "wasm_sha256": "deae51926429a785a0b21366e4b3f901135d573702a4261492b763f5c282a77a",
+  "admin": "GAP6AMMPQVBOO55ME3V6VLJ7ZQMSCRNAAUQ5DIGYY2B3ZBHPMHT7TJZM",
+  "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+  "fee_bps": 250,
+  "fee_recipient": "GAP6AMMPQVBOO55ME3V6VLJ7ZQMSCRNAAUQ5DIGYY2B3ZBHPMHT7TJZM",
+  "deployed_at": "2026-11-27T10:31:29Z",
+  "deployed_by": "GAP6AMMPQVBOO55ME3V6VLJ7ZQMSCRNAAUQ5DIGYY2B3ZBHPMHT7TJZM"
 }
