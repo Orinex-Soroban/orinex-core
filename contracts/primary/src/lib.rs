@@ -306,6 +306,11 @@ impl PrimaryContract {
         events::deal_refunded(&env, deal_id, &deal.payer, deal.amount);
         Ok(())
     }
+
+    /// Read a deal by id.
+    pub fn get_deal(env: Env, deal_id: u64) -> Result<Deal, Error> {
+        storage::read_deal(&env, deal_id)
+    }
 }
 
 /// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
