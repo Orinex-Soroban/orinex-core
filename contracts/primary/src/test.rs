@@ -567,6 +567,80 @@ fn release_fee_overflow_is_reported() {
 }
 
 #[test]
+fn fee_rounding_holds_across_amounts_and_rates() {
+    let s = Setup::new();
+    let rates = [0u32, 1, 250, 999, MAX_FEE_BPS];
+    let amounts = [
+        1i128,
+        2,
+        7,
+        10,
+        99,
+        100,
+        101,
+        9_999,
+        10_000,
+        10_001,
+        1_000_000_007,
+    ];
+
+    let mut expected_payee = 0i128;
+    let mut expected_fee = 0i128;
+
+    for rate in rates {
+        s.client().set_fee_bps(&rate);
+        for amount in amounts {
+            let fee = amount * rate as i128 / 10_000;
+            assert!(fee <= amount, "fee exceeds amount at {rate} bps");
+
+            let deal_id = s.funded_deal(amount);
+            s.client().release(&s.payer, &deal_id);
+
+            expected_payee += amount - fee;
+            expected_fee += fee;
+
+            assert_eq!(s.balance(&s.payee), expected_payee);
+            assert_eq!(s.balance(&s.fee_recipient), expected_fee);
+            assert_eq!(s.balance(&s.contract), 0);
+        }
+    }
+}
+
+#[test]
+fn fee_rounds_down_and_never_exceeds_the_amount() {
+    let s = Setup::new();
+    s.client().set_fee_bps(&MAX_FEE_BPS);
+
+    // 9 * 1000 / 10_000 == 0: no fee is taken below one fee unit.
+    let first = s.funded_deal(9);
+    s.client().release(&s.payer, &first);
+    assert_eq!(s.balance(&s.payee), 9);
+    assert_eq!(s.balance(&s.fee_recipient), 0);
+
+    // 10 * 1000 / 10_000 == 1: the split floors instead of rounding up.
+    let second = s.funded_deal(10);
+    s.client().release(&s.payer, &second);
+    assert_eq!(s.balance(&s.payee), 18);
+    assert_eq!(s.balance(&s.fee_recipient), 1);
+}
+
+#[test]
+fn release_handles_largest_amount_without_overflow() {
+    let s = Setup::new();
+    s.client().set_fee_bps(&MAX_FEE_BPS);
+    let amount = i128::MAX / MAX_FEE_BPS as i128;
+    let deal_id = s.funded_deal(amount);
+
+    s.client().release(&s.payer, &deal_id);
+
+    let fee = amount * MAX_FEE_BPS as i128 / 10_000;
+    assert_eq!(s.balance(&s.payee), amount - fee);
+    assert_eq!(s.balance(&s.fee_recipient), fee);
+    assert_eq!(s.balance(&s.payer), 0);
+    assert_eq!(s.balance(&s.contract), 0);
+}
+
+#[test]
 fn emitting_events() {
     let s = Setup::new();
     let deal_id = s.funded_deal(AMOUNT);
