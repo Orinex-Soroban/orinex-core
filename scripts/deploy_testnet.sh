@@ -13,6 +13,8 @@
 #   IDENTITY        stellar CLI key name (default orinex-testnet)
 #   WASM            wasm path (default artifacts/primary.wasm)
 #   DEPLOYMENTS_FILE deployment manifest (default deployments/testnet.json)
+#   RPC_URL         RPC endpoint recorded in the manifest
+#   PASSPHRASE      network passphrase recorded in the manifest
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,10 +25,17 @@ IDENTITY="${IDENTITY:-orinex-testnet}"
 WASM="${WASM:-artifacts/primary.wasm}"
 DEPLOYMENTS_FILE="${DEPLOYMENTS_FILE:-deployments/testnet.json}"
 FEE_BPS="${FEE_BPS:-250}"
+RPC_URL="${RPC_URL:-https://soroban-testnet.stellar.org}"
+PASSPHRASE="${PASSPHRASE:-Test SDF Network ; September 2015}"
 
 : "${ADMIN:?set ADMIN to the contract admin account address}"
 : "${TOKEN:?set TOKEN to the SEP-41 asset contract address}"
 : "${FEE_RECIPIENT:?set FEE_RECIPIENT to the fee recipient account address}"
+
+if ! [[ "$FEE_BPS" =~ ^[0-9]+$ ]]; then
+  echo "error: FEE_BPS must be a non-negative integer (got '${FEE_BPS}')" >&2
+  exit 1
+fi
 
 if ! command -v stellar >/dev/null 2>&1; then
   echo "error: stellar CLI not found on PATH" >&2
@@ -63,8 +72,6 @@ stellar contract invoke \
   --fee_recipient "$FEE_RECIPIENT"
 
 WASM_SHA256="$(sha256sum "$WASM" | cut -d' ' -f1)"
-RPC_URL="$(stellar network rpc-url --network "$NETWORK" 2>/dev/null || echo "https://soroban-testnet.stellar.org")"
-PASSPHRASE="$(stellar network passphrase --network "$NETWORK" 2>/dev/null || echo "Test SDF Network ; September 2015")"
 DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 mkdir -p "$(dirname "$DEPLOYMENTS_FILE")"
