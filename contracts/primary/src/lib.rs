@@ -153,4 +153,46 @@ impl PrimaryContract {
         events::deal_funded(&env, deal_id, &payer, deal.amount);
         Ok(())
     }
+
+    /// Release escrowed funds to the payee, deducting the protocol fee. The
+    /// payer must authorize.
+    pub fn release(env: Env, payer: Address, deal_id: u64) -> Result<(), Error> {
+        payer.require_auth();
+
+        let config = read_config(&env)?;
+        let mut deal = storage::read_deal(&env, deal_id)?;
+
+        if deal.payer != payer {
+            return Err(Error::Unauthorized);
+        }
+        if deal.status != DealStatus::Funded {
+            return Err(Error::InvalidStatus);
+        }
+
+        let fee = fee_amount(deal.amount, config.fee_bps)?;
+        let net = deal
+            .amount
+            .checked_sub(fee)
+            .ok_or(Error::ArithmeticOverflow)?;
+
+        let token = token::Client::new(&env, &config.token);
+        let contract = env.current_contract_address();
+        if fee > 0 {
+            token.transfer(&contract, &config.fee_recipient, &fee);
+        }
+        token.transfer(&contract, &deal.payee, &net);
+
+        deal.status = DealStatus::Released;
+        storage::write_deal(&env, &deal);
+        events::deal_released(&env, deal_id, &deal.payee, net, fee);
+        Ok(())
+    }
+}
+
+/// Protocol fee for `amount` at `fee_bps` basis points, rounded down.
+fn fee_amount(amount: i128, fee_bps: u32) -> Result<i128, Error> {
+    let scaled = amount
+        .checked_mul(fee_bps as i128)
+        .ok_or(Error::ArithmeticOverflow)?;
+    Ok(scaled / storage::BPS_DENOMINATOR)
 }
