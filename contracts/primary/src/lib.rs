@@ -1,6 +1,7 @@
 #![no_std]
 
 mod errors;
+pub mod events;
 pub mod storage;
 
 use soroban_sdk::contract;
